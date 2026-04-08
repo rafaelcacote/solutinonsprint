@@ -118,6 +118,25 @@ class UsersController extends Controller
             ->with('success', 'Usuário excluído com sucesso.');
     }
 
+    public function updatePassword(Request $request, User $usuario)
+    {
+        $data = $request->validate(
+            [
+                'new_password' => ['required', 'string', 'min:8', 'confirmed'],
+                'new_password_confirmation' => ['required', 'string', 'min:8'],
+            ],
+            $this->validationMessages(),
+            $this->validationAttributes()
+        );
+
+        $usuario->password = Hash::make($data['new_password']);
+        $usuario->save();
+
+        return redirect()
+            ->route('usuarios.index')
+            ->with('success', 'Senha atualizada com sucesso.');
+    }
+
     private function validationMessages(): array
     {
         return [
@@ -138,6 +157,8 @@ class UsersController extends Controller
             'email' => 'e-mail',
             'password' => 'senha',
             'password_confirmation' => 'confirmação de senha',
+            'new_password' => 'nova senha',
+            'new_password_confirmation' => 'confirmação da nova senha',
         ];
     }
 }

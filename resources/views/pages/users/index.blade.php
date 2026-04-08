@@ -11,7 +11,18 @@
         <x-ui.alert variant="error" title="Atenção" message="{{ session('error') }}" />
     @endif
 
-    <div class="space-y-6" x-data="{ deleteAction: '', deleteUserName: '' }">
+    <div
+        class="space-y-6"
+        x-data="{ deleteAction: '', deleteUserName: '', passwordAction: '', passwordUserName: '', passwordUserId: '' }"
+        x-init="
+            @if ($errors->has('new_password') || $errors->has('new_password_confirmation'))
+                passwordUserId = {{ Js::from(old('_password_user_id')) }};
+                passwordAction = {{ Js::from(route('usuarios.update-password', old('_password_user_id', 0))) }};
+                passwordUserName = {{ Js::from(old('_password_user_name')) }};
+                $nextTick(() => $dispatch('open-password-user-modal'));
+            @endif
+        "
+    >
         <x-common.component-card title="Gerenciar Usuários" desc="">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
                 <form method="GET" action="{{ route('usuarios.index') }}" class="flex w-full gap-3 sm:w-auto">
@@ -129,6 +140,25 @@
 
                                             <button
                                                 type="button"
+                                                aria-label="Editar senha do usuário"
+                                                @click="
+                                                    passwordUserId = {{ Js::from($usuario->id) }};
+                                                    passwordAction = {{ Js::from(route('usuarios.update-password', $usuario)) }};
+                                                    passwordUserName = {{ Js::from($usuario->name) }};
+                                                    $dispatch('open-password-user-modal');
+                                                "
+                                            >
+                                                <svg
+                                                    class="text-gray-700 cursor-pointer size-5 hover:text-amber-500 dark:text-gray-400 dark:hover:text-amber-400"
+                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
+                                                >
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2h-1V9a5 5 0 00-10 0v2H6a2 2 0 00-2 2v6a2 2 0 002 2zm3-10V9a3 3 0 016 0v2H9z" />
+                                                </svg>
+                                            </button>
+
+                                            <button
+                                                type="button"
                                                 aria-label="Excluir usuário"
                                                 @click="
                                                     deleteAction = {{ Js::from(route('usuarios.destroy', $usuario)) }};
@@ -160,6 +190,71 @@
             </div>
 
         </x-common.component-card>
+
+        <x-ui.modal @open-password-user-modal.window="open = true" :isOpen="false" class="max-w-[520px]">
+            <div class="w-full p-6 sm:p-8">
+                <h4 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+                    Editar senha
+                </h4>
+                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                    Defina uma nova senha para o usuário <span class="font-medium text-gray-700 dark:text-gray-300"
+                        x-text="passwordUserName"></span>.
+                </p>
+
+                <form class="mt-6 space-y-4" method="POST" :action="passwordAction">
+                    @csrf
+                    @method('PUT')
+                    <input type="hidden" name="_password_user_id" :value="passwordUserId">
+                    <input type="hidden" name="_password_user_name" :value="passwordUserName">
+
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                            Nova senha<span class="text-error-500">*</span>
+                        </label>
+                        <input
+                            type="password"
+                            name="new_password"
+                            placeholder="Digite a nova senha"
+                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 @error('new_password') border-red-500 focus:border-red-500 dark:border-red-500 @enderror"
+                        />
+                        @error('new_password')
+                            <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div>
+                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
+                            Confirmar nova senha<span class="text-error-500">*</span>
+                        </label>
+                        <input
+                            type="password"
+                            name="new_password_confirmation"
+                            placeholder="Repita a nova senha"
+                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 @error('new_password_confirmation') border-red-500 focus:border-red-500 dark:border-red-500 @enderror"
+                        />
+                        @error('new_password_confirmation')
+                            <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{{ $message }}</p>
+                        @enderror
+                    </div>
+
+                    <div class="flex items-center justify-end gap-3 pt-2">
+                        <button
+                            type="button"
+                            @click="open = false"
+                            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            type="submit"
+                            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-3.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
+                        >
+                            Salvar senha
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </x-ui.modal>
 
         <x-ui.modal @open-delete-user-modal.window="open = true" :isOpen="false" class="max-w-[520px]">
         <div class="w-full p-6 sm:p-8">

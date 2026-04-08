@@ -85,6 +85,7 @@ Route::middleware('auth')->group(function () {
 
     // users CRUD
     Route::resource('usuarios', UsersController::class)->except(['show']);
+    Route::put('/usuarios/{usuario}/senha', [UsersController::class, 'updatePassword'])->name('usuarios.update-password');
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
