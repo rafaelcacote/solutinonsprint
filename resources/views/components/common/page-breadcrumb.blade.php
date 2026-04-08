@@ -1,7 +1,15 @@
-@props(['pageTitle' => 'Page'])
+@props([
+    'pageTitle' => 'Page',
+    'icon' => null,
+])
 
 <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
-    <h2 class="text-xl font-semibold text-gray-800 dark:text-white/90">
+    <h2 class="flex items-center gap-2 text-xl font-semibold text-gray-800 dark:text-white/90">
+        @if ($icon)
+            <span class="inline-flex h-6 w-6 items-center justify-center text-gray-500 dark:text-gray-400">
+                {!! \App\Helpers\MenuHelper::getIconSvg($icon) !!}
+            </span>
+        @endif
         {{ $pageTitle }}
     </h2>
     <nav>

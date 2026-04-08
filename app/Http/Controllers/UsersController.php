@@ -39,12 +39,16 @@ class UsersController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email'],
-            'password' => ['required', 'string', 'min:8', 'confirmed'],
-            'password_confirmation' => ['required', 'string', 'min:8'],
-        ]);
+        $data = $request->validate(
+            [
+                'name' => ['required', 'string', 'max:255'],
+                'email' => ['required', 'email', 'max:255', 'unique:users,email'],
+                'password' => ['required', 'string', 'min:8', 'confirmed'],
+                'password_confirmation' => ['required', 'string', 'min:8'],
+            ],
+            $this->validationMessages(),
+            $this->validationAttributes()
+        );
 
         User::create([
             'name' => $data['name'],
@@ -78,7 +82,11 @@ class UsersController extends Controller
             $rules['password_confirmation'] = ['required', 'string', 'min:8'];
         }
 
-        $data = $request->validate($rules);
+        $data = $request->validate(
+            $rules,
+            $this->validationMessages(),
+            $this->validationAttributes()
+        );
 
         $usuario->name = $data['name'];
         $usuario->email = $data['email'];
@@ -108,6 +116,29 @@ class UsersController extends Controller
         return redirect()
             ->route('usuarios.index')
             ->with('success', 'Usuário excluído com sucesso.');
+    }
+
+    private function validationMessages(): array
+    {
+        return [
+            'required' => 'O campo :attribute é obrigatório.',
+            'string' => 'O campo :attribute deve ser um texto válido.',
+            'email' => 'Informe um e-mail válido.',
+            'max' => 'O campo :attribute não pode ter mais de :max caracteres.',
+            'min' => 'O campo :attribute deve ter no mínimo :min caracteres.',
+            'unique' => 'Este :attribute já está em uso.',
+            'confirmed' => 'A confirmação do campo :attribute não confere.',
+        ];
+    }
+
+    private function validationAttributes(): array
+    {
+        return [
+            'name' => 'nome',
+            'email' => 'e-mail',
+            'password' => 'senha',
+            'password_confirmation' => 'confirmação de senha',
+        ];
     }
 }
 
