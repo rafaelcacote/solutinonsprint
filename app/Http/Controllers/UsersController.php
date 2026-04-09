@@ -20,8 +20,9 @@ class UsersController extends Controller
             });
         }
 
-        // Mantém a listagem simples e consistente com o TailAdmin (sem template de paginação).
-        $users = $query->limit(50)->get();
+        $users = $query
+            ->paginate(10)
+            ->withQueryString();
 
         return view('pages.users.index', [
             'title' => 'Usuários',
@@ -73,7 +74,7 @@ class UsersController extends Controller
     {
         $rules = [
             'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'email', 'max:255', 'unique:users,email,' . $usuario->id],
+            'email' => ['required', 'email', 'max:255', 'unique:users,email,'.$usuario->id],
         ];
 
         // Só valida senha se o usuário preencher.
@@ -162,4 +163,3 @@ class UsersController extends Controller
         ];
     }
 }
-

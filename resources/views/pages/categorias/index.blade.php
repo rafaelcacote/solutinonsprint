@@ -1,7 +1,7 @@
 @extends('layouts.app')
 
 @section('content')
-    <x-common.page-breadcrumb pageTitle="Usuários" icon="user-profile" />
+    <x-common.page-breadcrumb pageTitle="Categorias" icon="forms" />
 
     @if (session('success'))
         <x-ui.success-notification title="Success Notification" message="{{ session('success') }}" />
@@ -13,24 +13,16 @@
 
     <div
         class="space-y-6"
-        x-data="{ deleteAction: '', deleteUserName: '', passwordAction: '', passwordUserName: '', passwordUserId: '' }"
-        x-init="
-            @if ($errors->has('new_password') || $errors->has('new_password_confirmation'))
-                passwordUserId = {{ Js::from(old('_password_user_id')) }};
-                passwordAction = {{ Js::from(route('usuarios.update-password', old('_password_user_id', 0))) }};
-                passwordUserName = {{ Js::from(old('_password_user_name')) }};
-                $nextTick(() => $dispatch('open-password-user-modal'));
-            @endif
-        "
+        x-data="{ deleteAction: '', deleteCategoriaNome: '' }"
     >
-        <x-common.component-card title="Gerenciar Usuários" desc="">
+        <x-common.component-card title="Gerenciar Categorias" desc="">
             <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <form method="GET" action="{{ route('usuarios.index') }}" class="flex w-full gap-3 sm:w-auto">
+                <form method="GET" action="{{ route('categorias.index') }}" class="flex w-full gap-3 sm:w-auto">
                     <input
                         type="text"
                         name="search"
                         value="{{ old('search', $search ?? '') }}"
-                        placeholder="Buscar por nome ou e-mail"
+                        placeholder="Buscar por nome ou descrição"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full sm:w-80 rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                     />
                     <button
@@ -46,7 +38,7 @@
                         Buscar
                     </button>
                     <a
-                        href="{{ route('usuarios.index') }}"
+                        href="{{ route('categorias.index') }}"
                         class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]"
                     >
                         <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none"
@@ -60,7 +52,7 @@
                 </form>
 
                 <a
-                    href="{{ route('usuarios.create') }}"
+                    href="{{ route('categorias.create') }}"
                     class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-3.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
                 >
                     <svg class="fill-current" width="20" height="20" viewBox="0 0 20 20" fill="none"
@@ -69,7 +61,7 @@
                             d="M10.0002 3.33301C10.4144 3.33301 10.7502 3.66879 10.7502 4.08301V9.24967H15.9168C16.331 9.24967 16.6668 9.58546 16.6668 9.99967C16.6668 10.4139 16.331 10.7497 15.9168 10.7497H10.7502V15.9163C10.7502 16.3306 10.4144 16.6663 10.0002 16.6663C9.58595 16.6663 9.25016 16.3306 9.25016 15.9163V10.7497H4.0835C3.66928 10.7497 3.3335 10.4139 3.3335 9.99967C3.3335 9.58546 3.66928 9.24967 4.0835 9.24967H9.25016V4.08301C9.25016 3.66879 9.58595 3.33301 10.0002 3.33301Z"
                             fill="" />
                     </svg>
-                    Novo Usuário
+                    Nova Categoria
                 </a>
             </div>
 
@@ -85,7 +77,10 @@
                                     Nome
                                 </th>
                                 <th class="px-6 py-3 font-medium text-gray-500 sm:px-6 text-theme-xs dark:text-gray-400 text-start">
-                                    E-mail
+                                    Descrição
+                                </th>
+                                <th class="px-6 py-3 font-medium text-gray-500 sm:px-6 text-theme-xs dark:text-gray-400 text-start">
+                                    Status
                                 </th>
                                 <th class="px-6 py-3 font-medium text-gray-500 sm:px-6 text-theme-xs dark:text-gray-400 text-start">
                                     Criado em
@@ -97,37 +92,62 @@
                         </thead>
 
                         <tbody>
-                            @forelse ($users as $usuario)
+                            @forelse ($categorias as $categoria)
                                 <tr class="border-b border-gray-100 dark:border-white/[0.05]">
                                     <td class="px-4 sm:px-6 py-3.5">
                                         <span class="block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                                            {{ $usuario->id }}
+                                            {{ $categoria->id }}
                                         </span>
                                     </td>
 
                                     <td class="px-4 sm:px-6 py-3.5">
                                         <span class="block text-theme-sm font-medium text-gray-700 dark:text-gray-400">
-                                            {{ $usuario->name }}
+                                            {{ $categoria->nome }}
                                         </span>
                                     </td>
 
                                     <td class="px-4 sm:px-6 py-3.5">
                                         <p class="text-gray-700 text-theme-sm dark:text-gray-400">
-                                            {{ $usuario->email }}
+                                            {{ $categoria->descricao ?: '-' }}
                                         </p>
                                     </td>
 
                                     <td class="px-4 sm:px-6 py-3.5">
+                                        <form method="POST" action="{{ route('categorias.toggle-status', $categoria) }}">
+                                            @csrf
+                                            @method('PUT')
+                                            <input type="hidden" name="ativo" value="0">
+                                            <input type="hidden" name="search" value="{{ $search ?? '' }}">
+                                            <label class="inline-flex cursor-pointer items-center gap-3">
+                                                <input
+                                                    type="checkbox"
+                                                    name="ativo"
+                                                    value="1"
+                                                    class="peer sr-only"
+                                                    @checked($categoria->ativo)
+                                                    onchange="this.form.submit()"
+                                                >
+                                                <div class="relative peer h-6 w-11 rounded-full bg-gray-200 after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-brand-500 peer-checked:after:translate-x-full peer-checked:after:border-white dark:bg-gray-700"></div>
+                                                @if ($categoria->ativo)
+                                                    <span class="text-theme-sm font-medium text-green-600 dark:text-green-400">Ativa</span>
+                                                @else
+                                                    <span class="text-theme-sm font-medium text-red-600 dark:text-red-400">Inativa</span>
+                                                @endif
+                                            </label>
+                                        </form>
+                                    </td>
+
+                                    <td class="px-4 sm:px-6 py-3.5">
                                         <p class="text-gray-700 text-theme-sm dark:text-gray-400">
-                                            {{ optional($usuario->created_at)->format('d/m/Y H:i') }}
+                                            {{ optional($categoria->created_at)->format('d/m/Y H:i') }}
                                         </p>
                                     </td>
 
                                     <td class="px-4 sm:px-6 py-3.5">
                                         <div class="flex items-center gap-3">
                                             <a
-                                                href="{{ route('usuarios.edit', $usuario) }}"
-                                                aria-label="Editar usuário"
+                                                href="{{ route('categorias.edit', $categoria) }}"
+                                                aria-label="Editar categoria"
                                                 class="text-gray-700 cursor-pointer size-5 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
                                             >
                                                 <svg class="stroke-current" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -140,30 +160,11 @@
 
                                             <button
                                                 type="button"
-                                                aria-label="Editar senha do usuário"
+                                                aria-label="Excluir categoria"
                                                 @click="
-                                                    passwordUserId = {{ Js::from($usuario->id) }};
-                                                    passwordAction = {{ Js::from(route('usuarios.update-password', $usuario)) }};
-                                                    passwordUserName = {{ Js::from($usuario->name) }};
-                                                    $dispatch('open-password-user-modal');
-                                                "
-                                            >
-                                                <svg
-                                                    class="text-gray-700 cursor-pointer size-5 hover:text-amber-500 dark:text-gray-400 dark:hover:text-amber-400"
-                                                    fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                                                >
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2h-1V9a5 5 0 00-10 0v2H6a2 2 0 00-2 2v6a2 2 0 002 2zm3-10V9a3 3 0 016 0v2H9z" />
-                                                </svg>
-                                            </button>
-
-                                            <button
-                                                type="button"
-                                                aria-label="Excluir usuário"
-                                                @click="
-                                                    deleteAction = {{ Js::from(route('usuarios.destroy', $usuario)) }};
-                                                    deleteUserName = {{ Js::from($usuario->name) }};
-                                                    $dispatch('open-delete-user-modal');
+                                                    deleteAction = {{ Js::from(route('categorias.destroy', $categoria)) }};
+                                                    deleteCategoriaNome = {{ Js::from($categoria->nome) }};
+                                                    $dispatch('open-delete-categoria-modal');
                                                 "
                                             >
                                                 <svg
@@ -179,8 +180,8 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="5" class="px-4 sm:px-6 py-8 text-sm text-gray-500 dark:text-gray-400">
-                                        Nenhum usuário encontrado.
+                                    <td colspan="6" class="px-4 sm:px-6 py-8 text-sm text-gray-500 dark:text-gray-400">
+                                        Nenhuma categoria encontrada.
                                     </td>
                                 </tr>
                             @endforelse
@@ -189,15 +190,15 @@
                 </div>
             </div>
 
-            @if ($users->hasPages())
+            @if ($categorias->hasPages())
                 <div class="border-t border-gray-100 p-4 sm:p-6 dark:border-gray-800">
                     <div class="flex items-center justify-between gap-2 px-0 py-0 sm:justify-normal">
                         <a
-                            href="{{ $users->previousPageUrl() ?? '#' }}"
+                            href="{{ $categorias->previousPageUrl() ?? '#' }}"
                             @class([
                                 'flex items-center gap-2 rounded-lg border p-2 sm:p-2.5 shadow-theme-xs',
-                                'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200' => $users->onFirstPage() === false,
-                                'pointer-events-none border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600' => $users->onFirstPage(),
+                                'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200' => $categorias->onFirstPage() === false,
+                                'pointer-events-none border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600' => $categorias->onFirstPage(),
                             ])
                         >
                             <span>
@@ -208,18 +209,18 @@
                         </a>
 
                         <span class="block text-sm font-medium text-gray-700 dark:text-gray-400 sm:hidden">
-                            Página {{ $users->currentPage() }} de {{ $users->lastPage() }}
+                            Página {{ $categorias->currentPage() }} de {{ $categorias->lastPage() }}
                         </span>
 
                         <ul class="hidden items-center gap-0.5 sm:flex sm:mx-3">
-                            @foreach ($users->getUrlRange(max(1, $users->currentPage() - 2), min($users->lastPage(), $users->currentPage() + 2)) as $page => $url)
+                            @foreach ($categorias->getUrlRange(max(1, $categorias->currentPage() - 2), min($categorias->lastPage(), $categorias->currentPage() + 2)) as $page => $url)
                                 <li>
                                     <a
                                         href="{{ $url }}"
                                         @class([
                                             'flex h-10 w-10 items-center justify-center rounded-lg text-sm font-medium',
-                                            'bg-brand-500 text-white hover:bg-brand-500 hover:text-white' => $page === $users->currentPage(),
-                                            'text-gray-700 hover:bg-brand-500 hover:text-white dark:text-gray-400 dark:hover:text-white' => $page !== $users->currentPage(),
+                                            'bg-brand-500 text-white hover:bg-brand-500 hover:text-white' => $page === $categorias->currentPage(),
+                                            'text-gray-700 hover:bg-brand-500 hover:text-white dark:text-gray-400 dark:hover:text-white' => $page !== $categorias->currentPage(),
                                         ])
                                     >
                                         {{ $page }}
@@ -229,11 +230,11 @@
                         </ul>
 
                         <a
-                            href="{{ $users->nextPageUrl() ?? '#' }}"
+                            href="{{ $categorias->nextPageUrl() ?? '#' }}"
                             @class([
                                 'flex items-center gap-2 rounded-lg border p-2 sm:p-2.5 shadow-theme-xs',
-                                'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200' => $users->hasMorePages(),
-                                'pointer-events-none border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600' => $users->hasMorePages() === false,
+                                'border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:text-gray-800 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03] dark:hover:text-gray-200' => $categorias->hasMorePages(),
+                                'pointer-events-none border-gray-200 bg-gray-100 text-gray-400 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-600' => $categorias->hasMorePages() === false,
                             ])
                         >
                             <span>
@@ -248,79 +249,14 @@
 
         </x-common.component-card>
 
-        <x-ui.modal @open-password-user-modal.window="open = true" :isOpen="false" class="max-w-[520px]">
-            <div class="w-full p-6 sm:p-8">
-                <h4 class="text-xl font-semibold text-gray-800 dark:text-white/90">
-                    Editar senha
-                </h4>
-                <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                    Defina uma nova senha para o usuário <span class="font-medium text-gray-700 dark:text-gray-300"
-                        x-text="passwordUserName"></span>.
-                </p>
-
-                <form class="mt-6 space-y-4" method="POST" :action="passwordAction">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="_password_user_id" :value="passwordUserId">
-                    <input type="hidden" name="_password_user_name" :value="passwordUserName">
-
-                    <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Nova senha<span class="text-error-500">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            name="new_password"
-                            placeholder="Digite a nova senha"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 @error('new_password') border-red-500 focus:border-red-500 dark:border-red-500 @enderror"
-                        />
-                        @error('new_password')
-                            <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div>
-                        <label class="mb-1.5 block text-sm font-medium text-gray-700 dark:text-gray-400">
-                            Confirmar nova senha<span class="text-error-500">*</span>
-                        </label>
-                        <input
-                            type="password"
-                            name="new_password_confirmation"
-                            placeholder="Repita a nova senha"
-                            class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30 @error('new_password_confirmation') border-red-500 focus:border-red-500 dark:border-red-500 @enderror"
-                        />
-                        @error('new_password_confirmation')
-                            <p class="mt-1.5 text-sm text-red-500 dark:text-red-400">{{ $message }}</p>
-                        @enderror
-                    </div>
-
-                    <div class="flex items-center justify-end gap-3 pt-2">
-                        <button
-                            type="button"
-                            @click="open = false"
-                            class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-5 py-3.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-white/[0.03]"
-                        >
-                            Cancelar
-                        </button>
-                        <button
-                            type="submit"
-                            class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-5 py-3.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
-                        >
-                            Salvar senha
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </x-ui.modal>
-
-        <x-ui.modal @open-delete-user-modal.window="open = true" :isOpen="false" class="max-w-[520px]">
+        <x-ui.modal @open-delete-categoria-modal.window="open = true" :isOpen="false" class="max-w-[520px]">
         <div class="w-full p-6 sm:p-8">
             <h4 class="text-xl font-semibold text-gray-800 dark:text-white/90">
                 Confirmar exclusão
             </h4>
             <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                Tem certeza que deseja excluir o usuário <span class="font-medium text-gray-700 dark:text-gray-300"
-                    x-text="deleteUserName"></span>?
+                Tem certeza que deseja excluir a categoria <span class="font-medium text-gray-700 dark:text-gray-300"
+                    x-text="deleteCategoriaNome"></span>?
             </p>
 
             <form class="mt-6 flex items-center justify-end gap-3" method="POST" :action="deleteAction">
@@ -356,4 +292,3 @@
         </x-ui.modal>
     </div>
 @endsection
-

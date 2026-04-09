@@ -1,8 +1,19 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\CategoriasController;
+use App\Http\Controllers\CategoriasDespesaController;
+use App\Http\Controllers\ClientesController;
+use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DespesasController;
+use App\Http\Controllers\FormasPagamentoController;
+use App\Http\Controllers\FornecedoresController;
+use App\Http\Controllers\ItensController;
+use App\Http\Controllers\MovimentacoesCaixaController;
+use App\Http\Controllers\OrcamentosController;
 use App\Http\Controllers\UsersController;
+use App\Http\Controllers\VendasController;
+use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest')->group(function () {
     Route::get('/', [AuthController::class, 'showLogin'])->name('signin');
@@ -15,9 +26,7 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return view('pages.dashboard.ecommerce', ['title' => 'E-commerce Dashboard']);
-    })->name('dashboard');
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
     // calender pages
     Route::get('/calendar', function () {
@@ -86,10 +95,23 @@ Route::middleware('auth')->group(function () {
     // users CRUD
     Route::resource('usuarios', UsersController::class)->except(['show']);
     Route::put('/usuarios/{usuario}/senha', [UsersController::class, 'updatePassword'])->name('usuarios.update-password');
+    Route::resource('categorias', CategoriasController::class)->except(['show']);
+    Route::put('/categorias/{categoria}/status', [CategoriasController::class, 'toggleStatus'])->name('categorias.toggle-status');
+    Route::resource('itens', ItensController::class)->except(['show']);
+    Route::put('/itens/{iten}/status', [ItensController::class, 'toggleStatus'])->name('itens.toggle-status');
+    Route::get('clientes/busca', [ClientesController::class, 'busca'])->name('clientes.busca');
+    Route::resource('clientes', ClientesController::class)->except(['show']);
+    Route::resource('formas-pagamento', FormasPagamentoController::class)->except(['show']);
+    Route::resource('categorias-despesa', CategoriasDespesaController::class)->except(['show']);
+    Route::resource('fornecedores', FornecedoresController::class)->except(['show']);
+    Route::resource('orcamentos', OrcamentosController::class);
+
+    Route::get('vendas/orcamentos/{orcamento}/dados-importacao', [VendasController::class, 'orcamentoParaVenda'])->name('vendas.orcamento-para-venda');
+    Route::resource('vendas', VendasController::class);
+
+    Route::resource('despesas', DespesasController::class);
+
+    Route::resource('movimentacoes-caixa', MovimentacoesCaixaController::class);
 
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 });
-
-
-
-
