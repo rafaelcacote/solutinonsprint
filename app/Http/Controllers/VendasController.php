@@ -24,7 +24,7 @@ class VendasController extends Controller
     public function index(Request $request)
     {
         $query = Venda::query()
-            ->with(['cliente'])
+            ->with(['cliente', 'itens', 'recebimentos.formaPagamento'])
             ->withSum('recebimentos', 'valor')
             ->orderByDesc('data_venda')
             ->orderByDesc('id');
@@ -40,6 +40,13 @@ class VendasController extends Controller
                 $q->where('numero', 'like', "%{$s}%")
                     ->orWhereHas('cliente', function ($cq) use ($s) {
                         $cq->where('nome', 'like', "%{$s}%");
+                    })
+                    ->orWhereHas('itens', function ($iq) use ($s) {
+                        $iq->where('descricao_item', 'like', "%{$s}%");
+                    })
+                    ->orWhereHas('recebimentos.formaPagamento', function ($rq) use ($s) {
+                        $rq->where('nome', 'like', "%{$s}%")
+                            ->orWhere('tipo', 'like', "%{$s}%");
                     });
             });
         }

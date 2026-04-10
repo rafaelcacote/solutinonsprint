@@ -40,7 +40,7 @@
                             type="text"
                             name="search"
                             value="{{ old('search', $search ?? '') }}"
-                            placeholder="Número ou nome do cliente"
+                            placeholder="Cliente, item ou tipo de recebimento"
                             class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 placeholder:text-gray-400 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90 dark:placeholder:text-white/30"
                         />
                     </div>
@@ -113,16 +113,15 @@
                     <table class="w-full min-w-[1200px]">
                         <thead class="border-y border-gray-100 bg-gray-50 px-6 py-3.5 dark:border-white/[0.05] dark:bg-gray-900">
                             <tr>
-                                <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Número</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Cliente</th>
+                                <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Item vendido</th>
+                                <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Tipo de recebimento</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Data venda</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Status</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Subtotal</th>
-                                <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Desconto</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Total</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Recebido</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Saldo</th>
-                                <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Cadastro</th>
                                 <th class="px-4 py-3 text-start text-theme-xs font-medium text-gray-500 dark:text-gray-400 sm:px-6">Ações</th>
                             </tr>
                         </thead>
@@ -131,13 +130,30 @@
                                 @php
                                     $recebido = (float) ($venda->recebimentos_sum_valor ?? 0);
                                     $saldo = max(0, round((float) $venda->total - $recebido, 2));
+                                    $primeiroItem = $venda->itens->first();
+                                    $totalItens = $venda->itens->count();
+                                    $tiposRecebimento = $venda->recebimentos
+                                        ->map(fn ($r) => \App\Models\FormaPagamento::TIPOS_LABELS[$r->formaPagamento?->tipo ?? ''] ?? null)
+                                        ->filter()
+                                        ->unique()
+                                        ->values();
                                 @endphp
                                 <tr class="border-b border-gray-100 dark:border-white/[0.05]">
-                                    <td class="px-4 py-3.5 sm:px-6">
-                                        <span class="block text-theme-sm font-medium text-gray-800 dark:text-gray-200">{{ $venda->numero }}</span>
-                                    </td>
                                     <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
                                         {{ $venda->cliente?->nome ?? '—' }}
+                                    </td>
+                                    <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
+                                        @if ($primeiroItem)
+                                            <span class="block">{{ $primeiroItem->descricao_item }}</span>
+                                            @if ($totalItens > 1)
+                                                <span class="text-theme-xs text-gray-500 dark:text-gray-500">+{{ $totalItens - 1 }} item(ns)</span>
+                                            @endif
+                                        @else
+                                            —
+                                        @endif
+                                    </td>
+                                    <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
+                                        {{ $tiposRecebimento->isNotEmpty() ? $tiposRecebimento->join(', ') : '—' }}
                                     </td>
                                     <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
                                         {{ $venda->data_venda->format('d/m/Y H:i') }}
@@ -150,9 +166,6 @@
                                     <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
                                         {{ $fmt($venda->subtotal) }}
                                     </td>
-                                    <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
-                                        {{ $fmt($venda->desconto) }}
-                                    </td>
                                     <td class="px-4 py-3.5 text-theme-sm font-medium text-gray-800 dark:text-gray-300 sm:px-6">
                                         {{ $fmt($venda->total) }}
                                     </td>
@@ -161,9 +174,6 @@
                                     </td>
                                     <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
                                         {{ $fmt($saldo) }}
-                                    </td>
-                                    <td class="px-4 py-3.5 text-theme-sm text-gray-700 dark:text-gray-400 sm:px-6">
-                                        {{ optional($venda->created_at)->format('d/m/Y H:i') }}
                                     </td>
                                     <td class="px-4 py-3.5 sm:px-6">
                                         <div class="flex items-center gap-2 sm:gap-3">
@@ -208,7 +218,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="11" class="px-4 py-8 text-sm text-gray-500 dark:text-gray-400 sm:px-6">
+                                    <td colspan="10" class="px-4 py-8 text-sm text-gray-500 dark:text-gray-400 sm:px-6">
                                         Nenhuma venda encontrada.
                                     </td>
                                 </tr>
