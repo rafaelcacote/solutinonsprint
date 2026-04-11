@@ -21,6 +21,9 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         [$inicio, $fim, $mes, $ano] = $this->resolverPeriodo($request);
+        $dataDia = $this->resolverDiaNoPeriodo($request, $inicio, $fim);
+        $inicioDia = $dataDia->copy()->startOfDay();
+        $fimDia = $dataDia->copy()->endOfDay();
 
         $totalVendasMes = (float) Venda::query()
             ->whereBetween('data_venda', [$inicio, $fim])
@@ -46,6 +49,30 @@ class DashboardController extends Controller
 
         $qtdOrcamentosMes = (int) Orcamento::query()
             ->whereBetween('data_orcamento', [$inicio, $fim])
+            ->count();
+
+        $totalVendasDia = (float) Venda::query()
+            ->whereBetween('data_venda', [$inicioDia, $fimDia])
+            ->sum('total');
+
+        $entradasCaixaDia = (float) MovimentacaoCaixa::query()
+            ->where('tipo', MovimentacaoCaixa::TIPO_ENTRADA)
+            ->whereBetween('data_movimentacao', [$inicioDia, $fimDia])
+            ->sum('valor');
+
+        $saidasCaixaDia = (float) MovimentacaoCaixa::query()
+            ->where('tipo', MovimentacaoCaixa::TIPO_SAIDA)
+            ->whereBetween('data_movimentacao', [$inicioDia, $fimDia])
+            ->sum('valor');
+
+        $saldoCaixaDia = round($entradasCaixaDia - $saidasCaixaDia, 2);
+
+        $qtdVendasDia = (int) Venda::query()
+            ->whereBetween('data_venda', [$inicioDia, $fimDia])
+            ->count();
+
+        $qtdOrcamentosDia = (int) Orcamento::query()
+            ->whereBetween('data_orcamento', [$inicioDia, $fimDia])
             ->count();
 
         $qtdClientes = (int) Cliente::query()->count();
@@ -84,6 +111,7 @@ class DashboardController extends Controller
         $despesasPorCategoria = $this->despesasPorCategoriaNoPeriodo($inicio, $fim);
 
         $labelPeriodo = $this->labelPeriodoPortugues($mes, $ano);
+        $labelDataDia = $this->labelDataPortugues($dataDia);
 
         return view('pages.dashboard.index', [
             'title' => 'Dashboard',
@@ -91,6 +119,8 @@ class DashboardController extends Controller
             'fim' => $fim,
             'mes' => $mes,
             'ano' => $ano,
+            'dataDia' => $dataDia,
+            'labelDataDia' => $labelDataDia,
             'labelPeriodo' => $labelPeriodo,
             'totalVendasMes' => $totalVendasMes,
             'totalDespesasMes' => $totalDespesasMes,
@@ -99,6 +129,12 @@ class DashboardController extends Controller
             'saldoCaixaMes' => $saldoCaixaMes,
             'qtdVendasMes' => $qtdVendasMes,
             'qtdOrcamentosMes' => $qtdOrcamentosMes,
+            'totalVendasDia' => $totalVendasDia,
+            'entradasCaixaDia' => $entradasCaixaDia,
+            'saidasCaixaDia' => $saidasCaixaDia,
+            'saldoCaixaDia' => $saldoCaixaDia,
+            'qtdVendasDia' => $qtdVendasDia,
+            'qtdOrcamentosDia' => $qtdOrcamentosDia,
             'qtdClientes' => $qtdClientes,
             'orcamentosPorStatus' => $orcamentosPorStatus,
             'itensMaisVendidos' => $itensMaisVendidos,
@@ -121,6 +157,54 @@ class DashboardController extends Controller
         $nome = $meses[$mes] ?? 'mês';
 
         return "{$nome} de {$ano}";
+    }
+
+    private function labelDataPortugues(Carbon $data): string
+    {
+        $meses = [
+            1 => 'janeiro', 2 => 'fevereiro', 3 => 'março', 4 => 'abril',
+            5 => 'maio', 6 => 'junho', 7 => 'julho', 8 => 'agosto',
+            9 => 'setembro', 10 => 'outubro', 11 => 'novembro', 12 => 'dezembro',
+        ];
+        $d = (int) $data->day;
+        $m = (int) $data->month;
+        $a = (int) $data->year;
+        $nome = $meses[$m] ?? 'mês';
+
+        return "{$d} de {$nome} de {$a}";
+    }
+
+    /**
+     * Dia usado no bloco “indicadores diários”, sempre dentro do mês/ano selecionados.
+     */
+    private function resolverDiaNoPeriodo(Request $request, Carbon $inicioMes, Carbon $fimMes): Carbon
+    {
+        $hoje = now()->startOfDay();
+        $inicioD = $inicioMes->copy()->startOfDay();
+        $fimD = $fimMes->copy()->startOfDay();
+
+        if (! $request->filled('data_dia')) {
+            if ($hoje->between($inicioD, $fimD)) {
+                return $hoje->copy();
+            }
+
+            return $fimD->copy();
+        }
+
+        try {
+            $parsed = Carbon::createFromFormat('Y-m-d', (string) $request->input('data_dia'))->startOfDay();
+        } catch (\Throwable) {
+            return $hoje->between($inicioD, $fimD) ? $hoje->copy() : $fimD->copy();
+        }
+
+        if ($parsed->lt($inicioD)) {
+            return $inicioD->copy();
+        }
+        if ($parsed->gt($fimD)) {
+            return $fimD->copy();
+        }
+
+        return $parsed;
     }
 
     /**

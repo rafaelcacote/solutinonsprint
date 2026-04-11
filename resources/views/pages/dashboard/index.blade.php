@@ -16,7 +16,7 @@
                     <span class="font-medium text-gray-800 dark:text-white/90">{{ $labelPeriodo }}</span>
                 </p>
                 <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Orçamentos por status refletem a situação atual de todos os cadastros; demais totais usam o período acima.
+                    Orçamentos por status refletem a situação atual de todos os cadastros; demais totais do mês usam o período acima. O bloco diário usa a data escolhida (sempre dentro desse mês).
                 </p>
             </div>
 
@@ -54,6 +54,18 @@
                         min="2000"
                         max="2100"
                         value="{{ (int) $ano }}"
+                        class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
+                    />
+                </div>
+
+                <div class="w-full sm:w-[170px]">
+                    <label class="mb-1.5 block text-xs font-medium text-gray-600 dark:text-gray-400">Dia (resumo diário)</label>
+                    <input
+                        type="date"
+                        name="data_dia"
+                        value="{{ $dataDia->format('Y-m-d') }}"
+                        min="{{ $inicio->format('Y-m-d') }}"
+                        max="{{ $fim->format('Y-m-d') }}"
                         class="dark:bg-dark-900 shadow-theme-xs focus:border-brand-300 focus:ring-brand-500/10 dark:focus:border-brand-800 h-11 w-full rounded-lg border border-gray-300 bg-transparent px-4 py-2.5 text-sm text-gray-800 focus:ring-3 focus:outline-hidden dark:border-gray-700 dark:bg-gray-900 dark:text-white/90"
                     />
                 </div>
@@ -181,6 +193,94 @@
                 <div class="mt-5">
                     <span class="text-sm text-gray-500 dark:text-gray-400">Clientes cadastrados</span>
                     <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ number_format($qtdClientes, 0, ',', '.') }}</h4>
+                </div>
+            </div>
+        </div>
+
+        {{-- Indicadores do dia (data do formulário; limitada ao mês/ano selecionados) --}}
+        <div>
+            <p class="mb-3 text-sm font-medium text-gray-800 dark:text-white/90">
+                Indicadores do dia: <span class="font-semibold text-brand-600 dark:text-brand-400">{{ $labelDataDia }}</span>
+            </p>
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-6">
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 dark:bg-brand-500/10">
+                        <svg class="text-brand-600 dark:text-brand-400" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.31641 4H3.49696C4.24468 4 4.87822 4.55068 4.98234 5.29112L5.13429 6.37161M5.13429 6.37161L6.23641 14.2089C6.34053 14.9493 6.97407 15.5 7.72179 15.5L17.0833 15.5C17.6803 15.5 18.2205 15.146 18.4587 14.5986L21.126 8.47023C21.5572 7.4795 20.8312 6.37161 19.7507 6.37161H5.13429Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Total de vendas (dia)</span>
+                        <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ $fmt($totalVendasDia) }}</h4>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-green-50 dark:bg-green-500/10">
+                        <svg class="text-green-600 dark:text-green-400" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Entradas no caixa (dia)</span>
+                        <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ $fmt($entradasCaixaDia) }}</h4>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-red-50 dark:bg-red-500/10">
+                        <svg class="text-red-600 dark:text-red-400" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M5 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Saídas do caixa (dia)</span>
+                        <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ $fmt($saidasCaixaDia) }}</h4>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800">
+                        <svg class="fill-gray-800 dark:fill-white/90" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M4.00002 12.0957C4.00002 7.67742 7.58174 4.0957 12 4.0957C16.4183 4.0957 20 7.67742 20 12.0957C20 16.514 16.4183 20.0957 12 20.0957H5.06068L6.34317 18.8132C6.48382 18.6726 6.56284 18.4818 6.56284 18.2829C6.56284 18.084 6.48382 17.8932 6.34317 17.7526C4.89463 16.304 4.00002 14.305 4.00002 12.0957Z" fill="" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Saldo do caixa (dia)</span>
+                        <h4
+                            @class([
+                                'mt-2 text-xl font-bold',
+                                'text-gray-800 dark:text-white/90' => $saldoCaixaDia >= 0,
+                                'text-red-600 dark:text-red-400' => $saldoCaixaDia < 0,
+                            ])
+                        >
+                            {{ $fmt($saldoCaixaDia) }}
+                        </h4>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-sky-50 dark:bg-sky-500/10">
+                        <svg class="text-sky-600 dark:text-sky-400" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M8 7h12M8 12h12M8 17h8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Qtd. vendas (dia)</span>
+                        <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ number_format($qtdVendasDia, 0, ',', '.') }}</h4>
+                    </div>
+                </div>
+
+                <div class="rounded-2xl border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-white/[0.03] md:p-6">
+                    <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 dark:bg-indigo-500/10">
+                        <svg class="text-indigo-600 dark:text-indigo-400" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <path fill-rule="evenodd" clip-rule="evenodd" d="M7.75586 5.50098C7.75586 5.08676 8.09165 4.75098 8.50586 4.75098H18.4985C18.9127 4.75098 19.2485 5.08676 19.2485 5.50098L19.2485 15.4956C19.2485 15.9098 18.9127 16.2456 18.4985 16.2456H8.50586C8.09165 16.2456 7.75586 15.9098 7.75586 15.4956V5.50098Z" fill="currentColor" />
+                        </svg>
+                    </div>
+                    <div class="mt-5">
+                        <span class="text-sm text-gray-500 dark:text-gray-400">Qtd. orçamentos (dia)</span>
+                        <h4 class="mt-2 text-xl font-bold text-gray-800 dark:text-white/90">{{ number_format($qtdOrcamentosDia, 0, ',', '.') }}</h4>
+                    </div>
                 </div>
             </div>
         </div>
