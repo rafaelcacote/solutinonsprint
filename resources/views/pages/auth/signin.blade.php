@@ -93,7 +93,7 @@
                     <x-common.common-grid-shape/>
                     <div class="flex max-w-xs flex-col items-center">
                         <a href="/" class="mb-4 block">
-                            <img src="{{ asset('images/logo/logo_print.png') }}" alt="Solutions Print" />
+                            <img src="{{ asset('images/logo/logo_print.svg') }}" alt="Solutions Print" class="mx-auto block h-auto w-full max-w-[280px] object-contain" />
                         </a>
                         <p class="text-center text-gray-400 dark:text-white/60">
                             Sistema Gerenciamento de Serviços Gráfica Solutins Prints

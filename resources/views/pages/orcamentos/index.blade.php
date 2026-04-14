@@ -170,6 +170,17 @@
                                                 </svg>
                                             </a>
                                             <a
+                                                href="{{ route('orcamentos.pdf', $orcamento) }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                aria-label="Imprimir orçamento (PDF)"
+                                                class="text-gray-700 cursor-pointer size-5 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"
+                                            >
+                                                <svg class="stroke-current" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2M6 14h12v8H6v-8z" />
+                                                </svg>
+                                            </a>
+                                            <a
                                                 href="{{ route('orcamentos.edit', $orcamento) }}"
                                                 aria-label="Editar orçamento"
                                                 class="text-gray-700 cursor-pointer size-5 hover:text-brand-500 dark:text-gray-400 dark:hover:text-brand-400"

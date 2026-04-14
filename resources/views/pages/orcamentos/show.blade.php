@@ -27,6 +27,17 @@
         </a>
         <div class="flex flex-wrap gap-2">
             <a
+                href="{{ route('orcamentos.pdf', $orcamento) }}"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="inline-flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-theme-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-white/[0.03]"
+            >
+                <svg class="stroke-current size-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.72 13.829c-.24.03-.48.062-.72.096m.72-.096a42.415 42.415 0 0 1 10.56 0m-10.56 0L6.34 18m10.94-4.171c.24.03.48.062.72.096M18.16 5.79a48.344 48.344 0 0 0-12.32 0m12.32 0c.24.03.48.062.72.096M6.34 18 5.79 6.72a48.344 48.344 0 0 0 12.32 0L18.16 18M6.72 13.829a42.415 42.415 0 0 0 10.56 0" />
+                </svg>
+                PDF
+            </a>
+            <a
                 href="{{ route('orcamentos.edit', $orcamento) }}"
                 class="inline-flex items-center gap-2 rounded-lg bg-brand-500 px-4 py-2.5 text-sm font-medium text-white shadow-theme-xs transition hover:bg-brand-600"
             >

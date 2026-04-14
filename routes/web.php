@@ -104,6 +104,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('formas-pagamento', FormasPagamentoController::class)->except(['show']);
     Route::resource('categorias-despesa', CategoriasDespesaController::class)->except(['show']);
     Route::resource('fornecedores', FornecedoresController::class)->except(['show']);
+    Route::get('orcamentos/{orcamento}/pdf', [OrcamentosController::class, 'pdf'])->name('orcamentos.pdf');
     Route::resource('orcamentos', OrcamentosController::class);
 
     Route::get('vendas/orcamentos/{orcamento}/dados-importacao', [VendasController::class, 'orcamentoParaVenda'])->name('vendas.orcamento-para-venda');

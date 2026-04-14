@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Cliente;
 use App\Models\Item;
 use App\Models\Orcamento;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -123,6 +125,183 @@ class OrcamentosController extends Controller
             'title' => 'Orçamento '.$orcamento->numero,
             'orcamento' => $orcamento,
         ]);
+    }
+
+    public function pdf(Orcamento $orcamento): Response
+    {
+        $orcamento->load(['cliente', 'itens.item']);
+
+        $logoPath = public_path((string) config('empresa.logo_pdf'));
+        $logo = $this->logoAssetForPdf($logoPath);
+
+        $cliente = $orcamento->cliente;
+        $clienteContato = implode("\n", array_filter([
+            $cliente?->telefone,
+            $cliente?->email,
+            $cliente?->cpf_cnpj,
+        ]));
+
+        $dataValidade = $orcamento->data_orcamento
+            ->copy()
+            ->addDays(max(1, (int) $orcamento->validade_dias))
+            ->format('d/m/Y');
+
+        $safeFile = 'orcamento-'.preg_replace('/[^A-Za-z0-9._-]+/', '-', $orcamento->numero).'.pdf';
+
+        return Pdf::loadView('pdf.orcamento', [
+            'orcamento' => $orcamento,
+            'logoSvgInline' => $logo !== null ? ($logo['inline_svg'] ?? null) : null,
+            'logoDataUri' => $logo !== null ? $logo['data_uri'] : null,
+            'logoImgWidth' => $logo !== null ? $logo['width_px'] : null,
+            'logoImgHeight' => $logo !== null ? $logo['height_px'] : null,
+            'empresaNome' => (string) config('empresa.nome'),
+            'empresaEndereco' => trim((string) config('empresa.endereco')),
+            'empresaTelefone' => trim((string) config('empresa.telefone')),
+            'empresaEmail' => trim((string) config('empresa.email')),
+            'clienteContato' => $clienteContato,
+            'dataEmissao' => $orcamento->data_orcamento->format('d/m/Y H:i'),
+            'dataValidade' => $dataValidade,
+            'geradoEm' => now()->format('d/m/Y H:i'),
+        ])
+            ->setPaper('a4')
+            ->stream($safeFile);
+    }
+
+    /**
+     * SVG é embutido no HTML: o DomPDF tende a rasterizar SVG em img pequeno dentro da
+     * caixa grande. PNG/JPEG seguem em data URI no img.
+     *
+     * @return array{inline_svg: string|null, data_uri: string|null, width_px: int, height_px: int|null}|null
+     */
+    private function logoAssetForPdf(string $path): ?array
+    {
+        if ($path === '' || ! is_readable($path)) {
+            return null;
+        }
+
+        $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        // DomPDF incorpora JPEG sem GD; PNG (e transparência) exige imagecreatefrompng().
+        if ($ext === 'png' && ! function_exists('imagecreatefrompng')) {
+            foreach (['.jpg', '.jpeg', '.JPG', '.JPEG'] as $suffix) {
+                $alt = (string) preg_replace('/\.png$/i', $suffix, $path);
+                if ($alt !== $path && is_readable($alt)) {
+                    $path = $alt;
+                    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                    break;
+                }
+            }
+        }
+
+        if ($ext === 'png' && ! function_exists('imagecreatefrompng')) {
+            throw new \RuntimeException(
+                'O PDF com logo em PNG precisa da extensão PHP GD. No Arch Linux: sudo pacman -S php-gd (reinicie o PHP-FPM / servidor). '.
+                'Sem instalar pacotes: converta a marca para JPEG e use EMPRESA_LOGO_PDF=images/logo/seu_arquivo.jpg, '.
+                'ou coloque um .jpg ao lado do .png com o mesmo nome (ex.: logo_print.jpg junto de logo_print.png).'
+            );
+        }
+
+        $mime = match ($ext) {
+            'svg' => 'image/svg+xml',
+            'png' => 'image/png',
+            'jpg', 'jpeg' => 'image/jpeg',
+            'gif' => 'image/gif',
+            'webp' => 'image/webp',
+            default => null,
+        };
+
+        if ($mime === null) {
+            return null;
+        }
+
+        $binary = @file_get_contents($path);
+        if ($binary === false) {
+            return null;
+        }
+
+        $targetW = max(48, min(720, (int) config('empresa.logo_pdf_width_px', 300)));
+        $targetH = null;
+
+        if ($ext === 'svg') {
+            $ratio = $this->svgIntrinsicAspectRatio($binary);
+            $targetH = $ratio !== null
+                ? max(1, (int) round($targetW * $ratio))
+                : max(1, (int) round($targetW * 0.25));
+            $binary = $this->svgWithRasterDisplaySize($binary, $targetW, $targetH);
+            $binary = $this->svgStripXmlProlog($binary);
+
+            return [
+                'inline_svg' => $binary,
+                'data_uri' => null,
+                'width_px' => $targetW,
+                'height_px' => $targetH,
+            ];
+        }
+
+        if (in_array($ext, ['png', 'jpg', 'jpeg', 'gif', 'webp'], true)) {
+            $dims = @getimagesizefromstring($binary);
+            if (is_array($dims) && $dims[0] > 0) {
+                $targetH = (int) max(1, round($targetW * ($dims[1] / $dims[0])));
+            }
+        }
+
+        return [
+            'inline_svg' => null,
+            'data_uri' => 'data:'.$mime.';base64,'.base64_encode($binary),
+            'width_px' => $targetW,
+            'height_px' => $targetH,
+        ];
+    }
+
+    private function svgStripXmlProlog(string $svg): string
+    {
+        $svg = preg_replace('/^\xEF\xBB\xBF/', '', $svg) ?? $svg;
+        $svg = preg_replace('/<\?xml[^?]*\?>\s*/i', '', $svg) ?? $svg;
+
+        return trim($svg);
+    }
+
+    private function svgIntrinsicAspectRatio(string $svg): ?float
+    {
+        if (preg_match('/viewBox="\s*([\d.\-+eE\s]+)\s*"/i', $svg, $m)) {
+            $parts = preg_split('/\s+/', trim($m[1]));
+            if (count($parts) === 4) {
+                $w = (float) $parts[2];
+                $h = (float) $parts[3];
+                if ($w > 0) {
+                    return $h / $w;
+                }
+            }
+        }
+
+        if (preg_match('/<svg\b[^>]{0,1200}>/is', $svg, $tag)) {
+            $t = $tag[0];
+            if (preg_match('/\bwidth="([\d.]+)"/i', $t, $w) && preg_match('/\bheight="([\d.]+)"/i', $t, $h)) {
+                $iw = (float) $w[1];
+                $ih = (float) $h[1];
+                if ($iw > 0) {
+                    return $ih / $iw;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private function svgWithRasterDisplaySize(string $svg, int $width, int $height): string
+    {
+        $out = preg_replace_callback(
+            '/<svg\b([^>]*)>/i',
+            function (array $m) use ($width, $height): string {
+                $inner = preg_replace('/\s(width|height)="[^"]*"/i', '', $m[1]);
+
+                return '<svg '.ltrim($inner).' width="'.$width.'" height="'.$height.'">';
+            },
+            $svg,
+            1
+        );
+
+        return is_string($out) ? $out : $svg;
     }
 
     public function edit(Orcamento $orcamento)

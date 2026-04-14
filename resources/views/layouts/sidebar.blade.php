@@ -71,11 +71,11 @@
     <div class="flex justify-center pt-8 pb-7">
         <a href="{{ route('dashboard') }}" class="flex justify-center">
             <img x-show="$store.sidebar.isExpanded || $store.sidebar.isHovered || $store.sidebar.isMobileOpen"
-                src="{{ asset('images/logo/logo_print.png') }}"
+                src="{{ asset('images/logo/logo_print2.svg') }}"
                 alt="Solutions Print"
                 class="h-14 w-auto max-w-[220px] object-contain" />
             <img x-show="!$store.sidebar.isExpanded && !$store.sidebar.isHovered && !$store.sidebar.isMobileOpen"
-                src="{{ asset('images/logo/logo_print.png') }}"
+                src="{{ asset('images/logo/logo_print2.svg') }}"
                 alt="Solutions Print"
                 class="h-11 w-11 object-contain" />
 
